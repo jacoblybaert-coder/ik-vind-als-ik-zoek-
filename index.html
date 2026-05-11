@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>stenen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Caveat:wght@400;600&family=DM+Serif+Display:ital@0;1&family=Space+Mono:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&family=Libre+Baskerville:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sand: #e8dcc8;
+    --stone: #8c8070;
+    --dark: #1a1614;
+    --warm: #c4a882;
+    --blush: #d4a0a0;
+    --ink: #2d2520;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    background: var(--dark);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--dark);
+    color: var(--sand);
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .intro {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .intro-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(4rem, 12vw, 9rem);
+    color: var(--sand);
+    letter-spacing: -0.02em;
+    opacity: 0;
+    animation: fadeUp 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .intro-sub {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    color: var(--stone);
+    margin-top: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
+    letter-spacing: 0.1em;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--stone);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeUp 1s ease 1.4s forwards;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 50px;
+    background: linear-gradient(to bottom, var(--stone), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.1); }
+  }
+
+  /* Decorative stones */
+  .stone-deco {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.06;
+    filter: blur(1px);
+  }
+  .stone-deco:nth-child(1) { width: 280px; height: 210px; background: var(--warm); top: 10%; right: -5%; border-radius: 60% 40% 55% 45%; }
+  .stone-deco:nth-child(2) { width: 180px; height: 160px; background: var(--stone); bottom: 15%; left: -3%; border-radius: 45% 55% 40% 60%; }
+  .stone-deco:nth-child(3) { width: 90px; height: 70px; background: var(--sand); top: 45%; left: 8%; border-radius: 50% 40% 60% 45%; }
+
+  /* Poem section */
+  .poem-section {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 8vh 2rem 30vh;
+  }
+
+  /* Each line */
+  .line {
+    display: block;
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-bottom: 0.7rem;
+    will-change: opacity, transform;
+  }
+
+  .line.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Line variants — different fonts, sizes, styles, alignments */
+  .l1  { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--stone); font-weight: 300; margin-bottom: 1.2rem; }
+  .l2  { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 5vw, 2.8rem); color: var(--sand); margin-bottom: 0.1rem; }
+  .l3  { font-family: 'Caveat', cursive; font-size: 1.4rem; color: var(--stone); padding-left: 15%; margin-bottom: 0.6rem; }
+  .l4  { font-family: 'DM Serif Display', serif; font-size: clamp(2rem, 6vw, 3.4rem); font-style: italic; color: var(--warm); }
+  .l5  { font-family: 'Space Mono', monospace; font-size: 0.9rem; color: var(--stone); letter-spacing: 0.08em; margin-top: 2.2rem; }
+  .l6  { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.4rem, 4vw, 2rem); color: var(--sand); font-weight: 600; }
+  .l7  { font-family: 'Caveat', cursive; font-size: 1.45rem; color: var(--stone); padding-left: 30%; }
+  .l8  { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-style: italic; color: var(--sand); opacity: 0.8; margin-top: 0.8rem; }
+  .l9  { font-family: 'Space Mono', monospace; font-size: 0.9rem; color: var(--stone); letter-spacing: 0.12em; margin-top: 1rem; }
+  .l10 { font-family: 'DM Serif Display', serif; font-size: clamp(1.6rem, 5vw, 2.6rem); color: var(--sand); margin-top: 0.2rem; }
+  .l11 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--stone); font-weight: 300; padding-left: 20%; }
+  .l12 { font-family: 'Caveat', cursive; font-size: 1.5rem; color: var(--warm); margin-top: 1.4rem; }
+  .l13 { font-family: 'Space Mono', monospace; font-size: 0.88rem; color: var(--stone); letter-spacing: 0.1em; margin-top: 0.2rem; }
+  .l14 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--stone); font-weight: 300; padding-left: 5%; }
+  .l15 { font-family: 'Caveat', cursive; font-size: 1.35rem; color: var(--stone); padding-left: 40%; margin-top: 1rem; }
+  .l16 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 5vw, 3rem); font-style: italic; color: var(--sand); margin-top: 0.5rem; }
+  .l17 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--stone); font-weight: 300; padding-left: 12%; }
+  .l18 { font-family: 'Space Mono', monospace; font-size: 0.9rem; color: var(--stone); letter-spacing: 0.08em; margin-top: 1.6rem; }
+  .l19 { font-family: 'DM Serif Display', serif; font-size: clamp(1.5rem, 4.5vw, 2.4rem); color: var(--warm); margin-top: 0.2rem; }
+  .l20 { font-family: 'Caveat', cursive; font-size: 1.4rem; color: var(--stone); padding-left: 20%; }
+  .l21 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-style: italic; color: var(--sand); margin-top: 1rem; }
+  .l22 { font-family: 'Space Mono', monospace; font-size: 0.88rem; color: var(--stone); padding-left: 5%; margin-top: 0.4rem; letter-spacing: 0.06em; }
+  .l23 { font-family: 'DM Serif Display', serif; font-size: clamp(1.3rem, 4vw, 2rem); color: var(--sand); margin-top: 1.2rem; }
+  .l24 { font-family: 'Caveat', cursive; font-size: 1.45rem; color: var(--stone); padding-left: 35%; }
+  .l25 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--stone); font-weight: 300; margin-top: 1rem; }
+  .l26 { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-style: italic; color: var(--sand); padding-left: 8%; }
+  .l27 { font-family: 'Space Mono', monospace; font-size: 0.88rem; color: var(--stone); letter-spacing: 0.1em; margin-top: 1.2rem; }
+  .l28 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 5vw, 3rem); color: var(--blush); margin-top: 0.2rem; }
+  .l29 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--stone); font-weight: 300; padding-left: 25%; margin-top: 0.5rem; }
+  .l30 { font-family: 'DM Serif Display', serif; font-size: clamp(1.4rem, 4.5vw, 2.4rem); color: var(--sand); padding-left: 10%; }
+  .l31 { font-family: 'Caveat', cursive; font-size: 1.4rem; color: var(--stone); padding-left: 20%; }
+  .l32 { font-family: 'Space Mono', monospace; font-size: 0.88rem; letter-spacing: 0.08em; color: var(--stone); margin-top: 1.4rem; }
+  .l33 { font-family: 'DM Serif Display', serif; font-size: clamp(2.4rem, 7vw, 4.5rem); color: var(--blush); margin-top: 0.2rem; }
+  .l34 { font-family: 'Caveat', cursive; font-size: 1.3rem; color: var(--stone); padding-left: 50%; margin-top: 0.6rem; }
+  .l35 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--stone); font-weight: 300; margin-top: 1.4rem; }
+  .l36 { font-family: 'DM Serif Display', serif; font-size: clamp(1.6rem, 5vw, 3rem); color: var(--warm); }
+  .l37 { font-family: 'Caveat', cursive; font-size: 1.35rem; color: var(--stone); padding-left: 30%; }
+  .l38 { font-family: 'Space Mono', monospace; font-size: 0.88rem; color: var(--stone); letter-spacing: 0.1em; margin-top: 1.2rem; }
+  .l39 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-style: italic; color: var(--sand); font-weight: 300; }
+  .l40 { font-family: 'Playfair Display', serif; font-size: 1.25rem; color: var(--stone); font-style: italic; padding-left: 15%; margin-top: 0.4rem; }
+  .l41 { font-family: 'Space Mono', monospace; font-size: 0.88rem; color: var(--stone); letter-spacing: 0.1em; margin-top: 1.4rem; }
+  .l42 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 5vw, 3.2rem); color: var(--blush); }
+  .l43 { font-family: 'Caveat', cursive; font-size: 1.5rem; color: var(--stone); padding-left: 40%; margin-top: 0.5rem; }
+
+  /* Final outro */
+  .outro {
+    text-align: center;
+    padding: 10vh 2rem 15vh;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  .outro.visible { opacity: 1; }
+  .outro-text {
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem;
+    color: var(--stone);
+    letter-spacing: 0.15em;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Progress bar */
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 1.5px;
+    background: var(--warm);
+    width: 0%;
+    transition: width 0.1s linear;
+    z-index: 200;
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<section class="intro">
+  <div class="stone-deco"></div>
+  <div class="stone-deco"></div>
+  <div class="stone-deco"></div>
+  <h1 class="intro-title">ik vind<br> (als ik zoek)</h1>
+  <p class="intro-sub">een gedicht over wat je vindt</p>
+  <div class="scroll-hint">
+    <span>scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<section class="poem-section">
+
+
+  <span class="line l2">ik vind stenen cool</span>
+  <span class="line l3">ik vind nog dingen cool</span>
+  <span class="line l4">maar vooral stenen</span>
+
+  <span class="line l5">—</span>
+  <span class="line l6">stenen zijn rond</span>
+  <span class="line l7">vind ik</span>
+  <span class="line l8">soms niet</span>
+  <span class="line l9">dat vind ik ook</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l10">wat ik niet vind</span>
+  <span class="line l11">zijn niet coole stenen</span>
+  <span class="line l12">die bestaan niet</span>
+  <span class="line l13">denk ik</span>
+  <span class="line l14">ik ben er nog nooit een tegen gekomen</span>
+  <span class="line l15">dus ik weet het niet</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l16">weet je wat ik ook vind</span>
+  <span class="line l17">dat bergen gewoon grote stenen zijn</span>
+  <span class="line l8">ze willen gewoon stoefen</span>
+  <span class="line l9">dat vind ik</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l18">ik vind ook...</span>
+  <span class="line l19">graag mooie stenen</span>
+  <span class="line l20">daar moet ik niet voor zoeken</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l21">een lief...</span>
+  <span class="line l22">daar moet ik wel voor zoeken</span>
+  <span class="line l23">eigenlijk niet</span>
+  <span class="line l24">die heb ik al gevonden</span>
+  <span class="line l25">maar eigenlijk niet</span>
+  <span class="line l26">want ze is mijn lief niet</span>
+  <span class="line l27">maar ik vind haar wel...</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l28">mooi</span>
+  <span class="line l29">heel mooi</span>
+  <span class="line l30">bijna zo mooi als stenen</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l31">nee...</span>
+  <span class="line l33">mooier</span>
+  <span class="line l34">dat is lastig</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l35">mooier zijn dan stenen</span>
+  <span class="line l36">maar zij kan het</span>
+  <span class="line l37">ik niet</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l38">daarom vind ze mij niet</span>
+  <span class="line l39">ze zoekt wel</span>
+  <span class="line l40">denk ik</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l41">ik zoek niet meer</span>
+  <span class="line l42">ik hoop</span>
+
+  <span class="line l5" style="margin-top:1.8rem">—</span>
+  <span class="line l41">ik hoop dat ze mij vind</span>
+  <span class="line l43">ooit...</span>
+
+</section>
+
+<div class="outro" id="outro">
+  <p class="outro-text">~ einde ~</p>
+</div>
+
+<script>
+  // Scroll progress bar
+  const progress = document.getElementById('progress');
+  window.addEventListener('scroll', () => {
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = (window.scrollY / total) * 100;
+    progress.style.width = pct + '%';
+  });
+
+  // IntersectionObserver for line reveal
+  const lines = document.querySelectorAll('.line');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, {
+    threshold: 0.3,
+    rootMargin: '0px 0px -8% 0px'
+  });
+
+  lines.forEach(line => observer.observe(line));
+
+  // Outro
+  const outro = document.getElementById('outro');
+  const outroObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) outro.classList.add('visible');
+    });
+  }, { threshold: 0.5 });
+  outroObs.observe(outro);
+</script>
+</body>
+</html>
